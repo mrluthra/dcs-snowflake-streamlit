@@ -49,7 +49,7 @@ For Snowflake deployment, External Access Integration must be configured:
 --1. Create private link for discovery and masking services
 
 --1.1 Provision discovery private link endpoint
--- Get Discovery or Masking Resource ID from https://help.delphix.com/dcs/current/content/docs/setting_up_adf_private_link_with_dcs.htm
+-- Get Discovery Resource ID from https://help.delphix.com/dcs/current/content/docs/setting_up_adf_private_link_with_dcs.htm
 
 SELECT SYSTEM$PROVISION_PRIVATELINK_ENDPOINT(
   '<Discovery ResourceID>',
