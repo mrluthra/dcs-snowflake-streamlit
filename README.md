@@ -45,21 +45,55 @@ Streamlit App in Snowflake to Discover and Mask sensitive data using Delphix Com
 For Snowflake deployment, External Access Integration must be configured:
 
 ```sql
--- 1. Create Network Rule (run as ACCOUNTADMIN)
+
+--1. Create private link for discovery and masking services
+
+--1.1 Provision discovery private link endpoint
+-- Get Discovery or Masking Resource ID from https://help.delphix.com/dcs/current/content/docs/setting_up_adf_private_link_with_dcs.htm
+
+SELECT SYSTEM$PROVISION_PRIVATELINK_ENDPOINT(
+  '<Discovery ResourceID>',
+  '*.<OrgName>-discovery-snow.pl.apps.delphix.io' -- start with *.
+);
+
+--1.2 Set Hostname
+SELECT SYSTEM$SET_PRIVATELINK_ENDPOINT_HOSTNAME(
+  '<Discovery ResourceID>',
+  '<OrgName>-discovery-snow.pl.apps.delphix.io' -- correct this endpoint value without *
+);
+
+--1.3 Provision Masking private link endpoint
+-- Get Masking Resource ID from https://help.delphix.com/dcs/current/content/docs/setting_up_adf_private_link_with_dcs.htm
+
+SELECT SYSTEM$PROVISION_PRIVATELINK_ENDPOINT(
+  '<Masking ResourceID>',
+  '*.<OrgName>-masking-snow.pl.apps.delphix.io' -- start with *.
+);
+
+--1.4 Set Hostname
+SELECT SYSTEM$SET_PRIVATELINK_ENDPOINT_HOSTNAME(
+  '<Masking ResourceID>',
+  '<OrgName>-masking-snow.pl.apps.delphix.io' -- correct this endpoint value without *
+);
+
+Once done, send email to delphix team as per instrcutions in this doc https://help.delphix.com/dcs/current/content/docs/setting_up_adf_private_link_with_dcs.htm, to approve the endpoints.
+Once endpoints are approved, and issued with same endpoint names used above, create network rule.
+
+-- 2. Create Network Rule (run as ACCOUNTADMIN)
 CREATE OR REPLACE NETWORK RULE dcs_api_network_rule
 MODE = EGRESS
 TYPE = HOST_PORT
-VALUE_LIST = ('azure.apps.delphix.io:443', 'login.microsoftonline.com:443');
+VALUE_LIST = ('<OrgName>-discovery-snow.pl.apps.delphix.io:443','<OrgName>-masking-snow.pl.apps.delphix.io:443', 'login.microsoftonline.com:443');
 
--- 2. Create External Access Integration  
+-- 3. Create External Access Integration  
 CREATE OR REPLACE EXTERNAL ACCESS INTEGRATION dcs_api_integration
 ALLOWED_NETWORK_RULES = (dcs_api_network_rule)
 ENABLED = true;
 
--- 3. Grant Usage
+-- 4. Grant Usage
 GRANT USAGE ON INTEGRATION dcs_api_integration TO ROLE your_role;
 
--- 4. Update Streamlit App
+-- 5. Update Streamlit App
 ALTER STREAMLIT your_streamlit_app SET EXTERNAL_ACCESS_INTEGRATIONS = (dcs_api_integration);
 ```
 
